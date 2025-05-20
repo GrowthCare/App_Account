@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AppSetup>
+  <text>
+    <R>
+      <startKey>地址：</startKey>
+      <endKey>。</endKey>
+    </R>
+    <R>
+      <startKey>【保单编号】</startKey>
+      <endKey>【被保险人】</endKey>
+    </R>
+    <R>
+      <startKey>姓名：</startKey>
+      <endKey>，</endKey>
+    </R>
+    <R>
+      <startKey>父亲为</startKey>
+      <endKey>（</endKey>
+    </R>
+    <R>
+      <startKey>母亲为</startKey>
+      <endKey>（</endKey>
+    </R>
+    <R>
+      <startKey>投 保 人：</startKey>
+      <endKey>，</endKey>
+    </R>
+    <R>
+      <startKey>被保险人：</startKey>
+      <endKey>，</endKey>
+    </R>
+  </text>
+  <table>
+    <R>
+      <startKey>哥哥</startKey>
+      <endKey>于</endKey>
+    </R>
+    <R>
+      <startKey>由</startKey>
+      <endKey>改</endKey>
+    </R>
+  </table>
+</AppSetup>
