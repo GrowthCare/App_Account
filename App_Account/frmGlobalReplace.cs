@@ -68,8 +68,8 @@ namespace App_Account
                             list.Add(tableLists[0].GetText(2, 5));
                             list.Add(tableLists[0].GetText(3, 1));
                             list.Add(tableLists[0].GetText(3, 3));
-                            XmlNode root = xml.SelectSingleNode("AppSetup/table");
-                            XmlNodeList friendList = root.SelectNodes("R");
+
+                            XmlNodeList friendList = xml.SelectSingleNode("AppSetup/table").SelectNodes("R");
                             foreach (XmlNode item in friendList)
                             {
                                 list.Add(GetMatchedText(tableLists[0].GetText(5, 1), item.SelectSingleNode("startKey").InnerText, item.SelectSingleNode("endKey").InnerText));
@@ -96,8 +96,7 @@ namespace App_Account
                                 string textPage = textExtractor.ExtractText(extractOptions);
                                 list.AddRange(ExtractMatches(textPage, phonePattern, idCardPattern));
 
-                                XmlNode root = xml.SelectSingleNode("AppSetup/text");
-                                XmlNodeList friendList = root.SelectNodes("R");
+                                XmlNodeList friendList = xml.SelectSingleNode("AppSetup/table").SelectNodes("R");
                                 foreach (XmlNode item in friendList)
                                 {
                                     list.Add(GetMatchedText(textPage, item.SelectSingleNode("startKey").InnerText, item.SelectSingleNode("endKey").InnerText));
