@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Xml;
@@ -27,104 +26,117 @@ namespace App_Account
 
         private void cmdBrowsePDF_Click(object sender, EventArgs e)
         {
-            //¥Ê∑≈’“µΩµƒ√Ù∏–“™Àÿ–≈œ¢
-            StringBuilder sb = new StringBuilder();
-            List<string> list = new List<string>();
             try
             {
-                openDataCab.Filter = "PDFŒƒº˛(*.pdf)|*.pdf";
+                openDataCab.Filter = "PDFÊñá‰ª∂(*.pdf)|*.pdf";
                 openDataCab.FileName = txt_Selected_PDF_Path.Text;
                 if (openDataCab.ShowDialog() != DialogResult.OK)
-                {
                     return;
-                }
-                txt_Selected_PDF_Path.Text = openDataCab.FileName.Trim();
 
+                txt_Selected_PDF_Path.Text = openDataCab.FileName.Trim();
                 SetButtonEnable(false);
                 txtElements.Text = "";
 
-                if (txt_Selected_PDF_Path.Text != "")
+                if (!string.IsNullOrEmpty(txt_Selected_PDF_Path.Text))
                 {
-                    using (PdfDocument pdfDocument = new PdfDocument(txt_Selected_PDF_Path.Text))
-                    {
-                        Boolean isTable = false;
-                        XmlDocument xml = new XmlDocument();
-                        xml.Load("Config.xml");
-
-                        // µ¿˝ªØPdfTableExtractor¿‡µƒ∂‘œÛ
-                        PdfTableExtractor extractor = new PdfTableExtractor(pdfDocument);
-                        //…˘√˜PdfTable¿‡µƒ±Ì∏Ò ˝◊È
-                        PdfTable[] tableLists;
-
-                        //ªÒ»°±Ì∏Ò ˝æ›
-                        tableLists = extractor.ExtractTable(0);
-                        if (tableLists != null)
-                        {
-                            list.Add(tableLists[0].GetText(0, 1));
-                            list.Add(tableLists[0].GetText(0, 3));
-                            list.Add(tableLists[0].GetText(0, 5));
-                            list.Add(tableLists[0].GetText(1, 1));
-                            list.Add(tableLists[0].GetText(2, 1));
-                            list.Add(tableLists[0].GetText(2, 5));
-                            list.Add(tableLists[0].GetText(3, 1));
-                            list.Add(tableLists[0].GetText(3, 3));
-                            XmlNode root = xml.SelectSingleNode("AppSetup/table");
-                            XmlNodeList friendList = root.SelectNodes("R");
-                            foreach (XmlNode item in friendList)
-                            {
-                                list.Add(GetMatchedText(tableLists[0].GetText(5, 1), item.SelectSingleNode("startKey").InnerText, item.SelectSingleNode("endKey").InnerText));
-                            }
-                            isTable = true;
-                        }
-
-                        if (!isTable)
-                        {   //»Áπ˚√ª”–±Ì∏Ò ˝æ›£¨‘ÚÃ·»°Œƒ±æ
-                            string phonePattern = @"(\D1[3|4|5|6|7|8|9]\d{1}[- ]?\d{4}[- ]?\d{4})";
-                            string idCardPattern = @"([1-9]\d{5}[12]\d{3}(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])\d{3}[0-9xX])";
-                            for (int i = 0; i < (pdfDocument.Pages.Count > 1 ? 2 : 1); i++)
-                            {
-                                //¥¥Ω®“ª∏ˆ PdfTextExtractot ∂‘œÛ
-                                PdfTextExtractor textExtractor = new PdfTextExtractor(pdfDocument.Pages[i]);
-
-                                //¥¥Ω®“ª∏ˆ PdfTextExtractOptions ∂‘œÛ
-                                PdfTextExtractOptions extractOptions = new PdfTextExtractOptions
-                                {
-                                    IsExtractAllText = true
-                                };
-
-                                //¥”µ±«∞“≥√Ê÷–Ã·»°Œƒ±æ
-                                string textPage = textExtractor.ExtractText(extractOptions);
-                                list.AddRange(ExtractMatches(textPage, phonePattern, idCardPattern));
-
-                                XmlNode root = xml.SelectSingleNode("AppSetup/text");
-                                XmlNodeList friendList = root.SelectNodes("R");
-                                foreach (XmlNode item in friendList)
-                                {
-                                    list.Add(GetMatchedText(textPage, item.SelectSingleNode("startKey").InnerText, item.SelectSingleNode("endKey").InnerText));
-                                }
-                            }
-                        }
-                    }
+                    var elements = ExtractSensitiveElements(txt_Selected_PDF_Path.Text, "Config.xml");
+                    txtElements.Text = string.Join(",", elements.Where(s => !string.IsNullOrEmpty(s)).Distinct());
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("¥¶¿ÌPDFŒƒº˛ ±≥ˆœ÷Œ Ã‚£¨‘≠“ÚŒ™£∫\r\n" + ex.Message, "PDFÃÊªª", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Â§ÑÁêÜPDFÊñá‰ª∂Êó∂Âá∫Áé∞ÈóÆÈ¢òÔºåÂéüÂõ†‰∏∫Ôºö\r\n" + ex.Message, "PDFÊõøÊç¢", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             finally
             {
-                List<string> distinctNumbers = list.Distinct().ToList();
-                foreach (var num in distinctNumbers)
-                {
-                    sb.Append(num + (string.IsNullOrEmpty(num) ? "" : ","));
-                }
-                if (sb.Length > 0)
-                {
-                    sb.Length -= 1; // “∆≥˝◊Ó∫Û“ª∏ˆ∂∫∫≈
-                    txtElements.Text = sb.ToString();
-                }
                 SetButtonEnable(true);
             }
+        }
+
+        private List<string> ExtractSensitiveElements(string pdfPath, string configPath)
+        {
+            var list = new List<string>();
+            using (PdfDocument pdfDocument = new PdfDocument(pdfPath))
+            {
+                XmlDocument xml = new XmlDocument();
+                xml.Load(configPath);
+
+                PdfTableExtractor extractor = new PdfTableExtractor(pdfDocument);
+                PdfTable[] tableLists = extractor.ExtractTable(0);
+
+                if (tableLists != null && tableLists.Length > 0)
+                {
+                    list.AddRange(ExtractTableElements(tableLists[0], xml));
+                }
+                else
+                {
+                    list.AddRange(ExtractTextElements(pdfDocument, xml));
+                }
+            }
+            return list;
+        }
+
+        private IEnumerable<string> ExtractTableElements(PdfTable table, XmlDocument xml)
+        {
+            var list = new List<string>();
+            // ÂÆâÂÖ®Ëé∑ÂèñË°®Ê†ºÂÜÖÂÆπÔºåÈÅøÂÖçË∂äÁïå
+            string SafeGetText(int row, int col)
+            {
+                if (row < table.GetRowCount() && col < table.GetColumnCount())
+                    return table.GetText(row, col);
+                return string.Empty;
+            }
+
+            XmlNode root = xml.SelectSingleNode("AppSetup/table");
+            if (root != null)
+            {
+                XmlNodeList friendList = root.SelectNodes("RC");
+                foreach (XmlNode item in friendList)
+                {
+                    var iRow = item.SelectSingleNode("row")?.InnerText ?? "";
+                    var iCol = item.SelectSingleNode("col")?.InnerText ?? "";
+                    list.Add(SafeGetText(Convert.ToInt32(iRow), Convert.ToInt32(iCol)));
+                }
+
+                friendList = root.SelectNodes("R");
+                foreach (XmlNode item in friendList)
+                {
+                    var startKey = item.SelectSingleNode("startKey")?.InnerText ?? "";
+                    var endKey = item.SelectSingleNode("endKey")?.InnerText ?? "";
+                    list.Add(GetMatchedText(SafeGetText(5, 1), startKey, endKey));
+                }
+            }
+            return list;
+        }
+
+        private IEnumerable<string> ExtractTextElements(PdfDocument pdfDocument, XmlDocument xml)
+        {
+            var list = new List<string>();
+            string phonePattern = @"(\D1[3|4|5|6|7|8|9]\d{1}[- ]?\d{4}[- ]?\d{4})";
+            string idCardPattern = @"([1-9]\d{5}[12]\d{3}(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])\d{3}[0-9xX])";
+            int pageCount = Math.Min(pdfDocument.Pages.Count, 2);
+
+            for (int i = 0; i < pageCount; i++)
+            {
+                PdfTextExtractor textExtractor = new PdfTextExtractor(pdfDocument.Pages[i]);
+                PdfTextExtractOptions extractOptions = new PdfTextExtractOptions { IsExtractAllText = true };
+                string textPage = textExtractor.ExtractText(extractOptions);
+
+                list.AddRange(ExtractMatches(textPage, phonePattern, idCardPattern));
+
+                XmlNode root = xml.SelectSingleNode("AppSetup/text");
+                if (root != null)
+                {
+                    XmlNodeList friendList = root.SelectNodes("R");
+                    foreach (XmlNode item in friendList)
+                    {
+                        var startKey = item.SelectSingleNode("startKey")?.InnerText ?? "";
+                        var endKey = item.SelectSingleNode("endKey")?.InnerText ?? "";
+                        list.Add(GetMatchedText(textPage, startKey, endKey));
+                    }
+                }
+            }
+            return list;
         }
 
         private void cmdExcuse_Click(object sender, EventArgs e)
@@ -133,34 +145,36 @@ namespace App_Account
             {
                 if (string.IsNullOrEmpty(txt_Selected_PDF_Path.Text))
                 {
-                    MessageBox.Show("«Îœ»—°‘ÒPDFŒƒº˛£°", "PDFÃÊªª", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("ËØ∑ÂÖàÈÄâÊã©PDFÊñá‰ª∂ÔºÅ", "PDFÊõøÊç¢", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
                 SetButtonEnable(false);
 
                 char character = '*';
                 string filePath = txt_Selected_PDF_Path.Text;
-                string[] words = txtElements.Text.Replace("£¨", ",").Split(',');
+                string[] words = txtElements.Text.Replace("Ôºå", ",").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
                 using (PdfDocument pdfDocument = new PdfDocument(filePath))
                 {
                     foreach (PdfPageBase page in pdfDocument.Pages)
                     {
                         PdfTextReplacer ptr = new PdfTextReplacer(page);
-
                         foreach (var word in words)
                         {
-                            ptr.ReplaceAllText(word, string.IsNullOrEmpty(txt_new_text.Text) ? new string(character, word.Length) : txt_new_text.Text);
+                            if (!string.IsNullOrEmpty(word))
+                            {
+                                ptr.ReplaceAllText(word, string.IsNullOrEmpty(txt_new_text.Text) ? new string(character, word.Length) : txt_new_text.Text);
+                            }
                         }
                     }
                     filePath = GenerateUniqueFileName(filePath);
                     pdfDocument.SaveToFile(filePath);
                 }
-                MessageBox.Show("À˘”–ÃÊªª“™Àÿ≥…π¶ÃÊªªÕÍ±œ£°", "PDFÃÊªª", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("ÊâÄÊúâÊõøÊç¢Ë¶ÅÁ¥†ÊàêÂäüÊõøÊç¢ÂÆåÊØïÔºÅ", "PDFÊõøÊç¢", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("¥¶¿ÌPDFŒƒº˛ ±≥ˆœ÷Œ Ã‚£¨‘≠“ÚŒ™£∫\r\n" + ex.Message, "PDFÃÊªª", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Â§ÑÁêÜPDFÊñá‰ª∂Êó∂Âá∫Áé∞ÈóÆÈ¢òÔºåÂéüÂõ†‰∏∫Ôºö\r\n" + ex.Message, "PDFÊõøÊç¢", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             finally
             {
@@ -170,7 +184,7 @@ namespace App_Account
 
         private List<string> ExtractMatches(string text, params string[] patterns)
         {
-            List<string> matches = new List<string>();
+            var matches = new List<string>();
             foreach (var pattern in patterns)
             {
                 foreach (Match match in Regex.Matches(text, pattern))
@@ -201,7 +215,7 @@ namespace App_Account
             cmdExcuse.Enabled = !string.IsNullOrEmpty(txtElements.Text);
         }
 
-        private void SetButtonEnable(Boolean state)
+        private void SetButtonEnable(bool state)
         {
             cmdBrowsePDF.Enabled = state;
             cmdClose.Enabled = state;
@@ -211,26 +225,26 @@ namespace App_Account
 
         private void PhotoMosaic(string filePath, int x, int y, int w, int h)
         {
-            // º”‘ÿ±≥æ∞Õº∆¨∫Õ“™∏≤∏«µƒÕº∆¨
-            Image backgroundImage = Image.FromFile(filePath);
-
-            // ¥¥Ω®“ª∏ˆ–¬µƒŒªÕº£¨”√”⁄¥Ê¥¢Ω·π˚Õº∆¨
-            using (Graphics g = Graphics.FromImage(new Bitmap(backgroundImage.Width, backgroundImage.Height)))
+            using (Image backgroundImage = Image.FromFile(filePath))
+            using (Bitmap resultBitmap = new Bitmap(backgroundImage.Width, backgroundImage.Height))
+            using (Graphics g = Graphics.FromImage(resultBitmap))
             {
-                // ªÊ÷∆±≥æ∞Õº∆¨
                 g.DrawImage(backgroundImage, 0, 0, backgroundImage.Width, backgroundImage.Height);
-
                 g.DrawRectangle(Pens.DarkGray, x, y, w, h);
+                resultBitmap.Save("result.png", System.Drawing.Imaging.ImageFormat.Png);
             }
-
-            // ±£¥ÊΩ·π˚Õº∆¨
-            backgroundImage.Save("result.png", System.Drawing.Imaging.ImageFormat.Png);
         }
 
         private string GetMatchedText(string text, string startKey, string endKey)
         {
-            int startIndex = text.IndexOf(startKey);
-            return (startIndex == -1) ? string.Empty : text.Substring(startIndex + startKey.Length, text.IndexOf(endKey, startIndex) - startIndex - startKey.Length).Trim();
+            if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(startKey) || string.IsNullOrEmpty(endKey))
+                return string.Empty;
+            int startIndex = text.IndexOf(startKey, StringComparison.Ordinal);
+            if (startIndex == -1) return string.Empty;
+            int fromIndex = startIndex + startKey.Length;
+            int endIndex = text.IndexOf(endKey, fromIndex, StringComparison.Ordinal);
+            if (endIndex == -1) return string.Empty;
+            return text.Substring(fromIndex, endIndex - fromIndex).Trim();
         }
     }
 }
