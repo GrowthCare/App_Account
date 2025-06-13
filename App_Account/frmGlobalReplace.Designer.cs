@@ -1,4 +1,4 @@
-﻿namespace App_Account
+namespace App_Account
 {
     partial class frmGlobalReplace
     {
