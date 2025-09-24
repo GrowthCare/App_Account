@@ -1,4 +1,5 @@
 using Spire.Pdf;
+using Spire.Pdf.Graphics;
 using Spire.Pdf.Texts;
 using Spire.Pdf.Utilities;
 using System;
@@ -212,7 +213,7 @@ namespace App_Account
 
         private void txtElements_TextChanged(object sender, EventArgs e)
         {
-            cmdExcuse.Enabled = !string.IsNullOrEmpty(txtElements.Text);
+            cmdExcuse.Enabled = !string.IsNullOrEmpty(txtElements.Text) && !string.IsNullOrEmpty(txt_Selected_PDF_Path.Text);
         }
 
         private void SetButtonEnable(bool state)
@@ -245,6 +246,76 @@ namespace App_Account
             int endIndex = text.IndexOf(endKey, fromIndex, StringComparison.Ordinal);
             if (endIndex == -1) return string.Empty;
             return text.Substring(fromIndex, endIndex - fromIndex).Trim();
+        }
+
+        private void ConvertPdfWithImage(string imageBasePath)
+        {
+            // 只处理常见图片文件
+            var imageExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff" };
+            var files = Directory.GetFiles(imageBasePath)
+                .Where(f => imageExtensions.Contains(Path.GetExtension(f))).ToArray();
+
+            if (files.Length == 0)
+                return;
+
+            using (PdfDocument pdf = new PdfDocument())
+            {
+                pdf.PageSettings.SetMargins(0, 0, 0, 0);
+
+                foreach (string file in files)
+                {
+                    try
+                    {
+                        using (Image image = Image.FromFile(file))
+                        {
+                            float width = image.PhysicalDimension.Width;
+                            float height = image.PhysicalDimension.Height;
+                            PdfPageBase page = pdf.Pages.Add(new SizeF(width, height));
+                            PdfImage pdfImage = PdfImage.FromImage(image);
+                            page.Canvas.DrawImage(pdfImage, 0, 0, pdfImage.Width, pdfImage.Height);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // 可记录日志或提示，当前图片处理失败但不影响整体
+                        Console.WriteLine($"处理图片失败: {file}, 错误: {ex.Message}");
+                    }
+                }
+
+                string outputPath = Path.Combine(imageBasePath, "output.pdf");
+                pdf.SaveToFile(outputPath);
+            }
+        }
+
+        private void cmdBatchConvert_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(txtFolder.Text))
+            {
+                MessageBox.Show("请先选择图片所在的根目录！", "PDF批量转换", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            TraverseDirectorys(txtFolder.Text);
+            MessageBox.Show("批量转换完毕！", "PDF批量转换", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        void TraverseDirectorys(string path)
+        {
+            // 递归遍历子文件夹
+            foreach (string directory in Directory.GetDirectories(path))
+            {
+                TraverseDirectorys(directory);
+                ConvertPdfWithImage(directory);
+            }
+        }
+
+        private void cmdSelectFolder_Click(object sender, EventArgs e)
+        {
+            fbdRootPath.SelectedPath = txtFolder.Text;
+            if (fbdRootPath.ShowDialog() != DialogResult.OK)
+                return;
+
+            txtFolder.Text = fbdRootPath.SelectedPath;
         }
     }
 }
