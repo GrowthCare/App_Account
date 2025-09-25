@@ -46,9 +46,12 @@ namespace App_Account
             this.lbl_policy_holder = new System.Windows.Forms.Label();
             this.cmdClose = new System.Windows.Forms.Button();
             this.tpGeneratePDFByImages = new System.Windows.Forms.TabPage();
+            this.lblProcess = new System.Windows.Forms.Label();
+            this.pgbOutput = new System.Windows.Forms.ProgressBar();
             this.txtFolder = new System.Windows.Forms.TextBox();
             this.lblFolder = new System.Windows.Forms.Label();
             this.cmdBatchConvert = new System.Windows.Forms.Button();
+            this.backgroundWorkerUI = new System.ComponentModel.BackgroundWorker();
             this.tabFunctionSelect.SuspendLayout();
             this.tpKeywordReplace.SuspendLayout();
             this.tpGeneratePDFByImages.SuspendLayout();
@@ -210,6 +213,8 @@ namespace App_Account
             // 
             this.tpGeneratePDFByImages.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("tpGeneratePDFByImages.BackgroundImage")));
             this.tpGeneratePDFByImages.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.tpGeneratePDFByImages.Controls.Add(this.lblProcess);
+            this.tpGeneratePDFByImages.Controls.Add(this.pgbOutput);
             this.tpGeneratePDFByImages.Controls.Add(this.txtFolder);
             this.tpGeneratePDFByImages.Controls.Add(this.cmdSelectFolder);
             this.tpGeneratePDFByImages.Controls.Add(this.lblFolder);
@@ -221,6 +226,29 @@ namespace App_Account
             this.tpGeneratePDFByImages.TabIndex = 1;
             this.tpGeneratePDFByImages.Text = "图片生成PDF";
             this.tpGeneratePDFByImages.UseVisualStyleBackColor = true;
+            // 
+            // lblProcess
+            // 
+            this.lblProcess.AutoSize = true;
+            this.lblProcess.BackColor = System.Drawing.Color.Transparent;
+            this.lblProcess.Font = new System.Drawing.Font("微软雅黑", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblProcess.ForeColor = System.Drawing.Color.White;
+            this.lblProcess.Location = new System.Drawing.Point(0, 234);
+            this.lblProcess.Name = "lblProcess";
+            this.lblProcess.Size = new System.Drawing.Size(68, 17);
+            this.lblProcess.TabIndex = 17;
+            this.lblProcess.Text = "正在处理：";
+            this.lblProcess.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.lblProcess.Visible = false;
+            // 
+            // pgbOutput
+            // 
+            this.pgbOutput.Location = new System.Drawing.Point(0, 254);
+            this.pgbOutput.Name = "pgbOutput";
+            this.pgbOutput.Size = new System.Drawing.Size(505, 20);
+            this.pgbOutput.Step = 1;
+            this.pgbOutput.TabIndex = 25;
+            this.pgbOutput.Visible = false;
             // 
             // txtFolder
             // 
@@ -256,6 +284,13 @@ namespace App_Account
             this.cmdBatchConvert.UseVisualStyleBackColor = true;
             this.cmdBatchConvert.Click += new System.EventHandler(this.cmdBatchConvert_Click);
             // 
+            // backgroundWorkerUI
+            // 
+            this.backgroundWorkerUI.WorkerReportsProgress = true;
+            this.backgroundWorkerUI.WorkerSupportsCancellation = true;
+            this.backgroundWorkerUI.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorkerUI_DoWork);
+            this.backgroundWorkerUI.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorkerUI_RunWorkerCompleted);
+            // 
             // frmGlobalReplace
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -269,7 +304,7 @@ namespace App_Account
             this.MaximizeBox = false;
             this.Name = "frmGlobalReplace";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "PDF关键字替换";
+            this.Text = "PDF处理小程序";
             this.tabFunctionSelect.ResumeLayout(false);
             this.tpKeywordReplace.ResumeLayout(false);
             this.tpKeywordReplace.PerformLayout();
@@ -299,5 +334,8 @@ namespace App_Account
         private System.Windows.Forms.TextBox txtFolder;
         private System.Windows.Forms.Button cmdSelectFolder;
         private System.Windows.Forms.Label lblFolder;
+        private System.Windows.Forms.ProgressBar pgbOutput;
+        private System.ComponentModel.BackgroundWorker backgroundWorkerUI;
+        private System.Windows.Forms.Label lblProcess;
     }
 }

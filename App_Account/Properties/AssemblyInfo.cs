@@ -5,8 +5,8 @@ using System.Runtime.InteropServices;
 // 有关程序集的常规信息通过下列属性集
 // 控制。更改这些属性值可修改
 // 与程序集关联的信息。
-[assembly: AssemblyTitle("PDF文本替换工具")]
-[assembly: AssemblyDescription("PDF文本替换工具")]
+[assembly: AssemblyTitle("PDF处理小程序")]
+[assembly: AssemblyDescription("PDF处理小程序")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("GrowthCare")]
 [assembly: AssemblyProduct("PDFMosaic")]

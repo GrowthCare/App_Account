@@ -15,6 +15,8 @@ namespace App_Account
 {
     public partial class frmGlobalReplace : Form
     {
+        int percent = 1;
+
         public frmGlobalReplace()
         {
             InitializeComponent();
@@ -295,17 +297,33 @@ namespace App_Account
                 MessageBox.Show("请先选择图片所在的根目录！", "PDF批量转换", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
-            TraverseDirectorys(txtFolder.Text);
-            MessageBox.Show("批量转换完毕！", "PDF批量转换", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            percent = 1;
+            var allDirs = Directory.GetDirectories(txtFolder.Text, "*", SearchOption.AllDirectories);
+            pgbOutput.Maximum = allDirs.Length + 1; // 包含根目录
+            pgbOutput.Value = 0;
+            pgbOutput.Style = ProgressBarStyle.Continuous;
+            pgbOutput.Visible = true;
+            lblProcess.Visible = true;
+            tabFunctionSelect.Enabled = false;
+            if (!backgroundWorkerUI.IsBusy)
+                backgroundWorkerUI.RunWorkerAsync();
         }
 
         void TraverseDirectorys(string path)
         {
-            // 递归遍历子文件夹
+            // 先处理当前目录
+            this.Invoke((Action)(() =>
+            {
+                pgbOutput.Value = percent;
+                lblProcess.Text = $"正在处理：{path} ";
+                percent++;
+            }));
+            ConvertPdfWithImage(path);
+
+            // 递归处理子目录
             foreach (string directory in Directory.GetDirectories(path))
             {
                 TraverseDirectorys(directory);
-                ConvertPdfWithImage(directory);
             }
         }
 
@@ -317,5 +335,23 @@ namespace App_Account
 
             txtFolder.Text = fbdRootPath.SelectedPath;
         }
+
+        #region 线程调度
+        private void backgroundWorkerUI_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
+        {
+            TraverseDirectorys(txtFolder.Text);
+        }
+        #endregion
+
+        #region 线程结束
+        private void backgroundWorkerUI_RunWorkerCompleted(object sender, System.ComponentModel.RunWorkerCompletedEventArgs e)
+        {
+            pgbOutput.Visible = false;
+            lblProcess.Text = "";
+            lblProcess.Visible = false;
+            tabFunctionSelect.Enabled = true;
+            MessageBox.Show("批量转换完毕！", "PDF批量转换", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        #endregion
     }
 }
